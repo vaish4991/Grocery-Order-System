@@ -1,0 +1,18 @@
+{
+  "name": "grocery-order-system",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:customer": "pnpm --dir apps/customer-web dev",
+    "dev:admin": "pnpm --dir apps/admin-dashboard dev",
+    "dev:backend": "pnpm --dir backend dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

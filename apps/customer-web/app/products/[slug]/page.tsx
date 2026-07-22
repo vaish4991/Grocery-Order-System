@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { products } from "@shared/data/catalog";
 import { Card, CardBody } from "@shared/ui";
 import { ContentPage } from "@customer/components/content-page";
+import { AddToCartButton } from "@customer/components/add-to-cart-button";
 
 interface ProductDetailsPageProps {
   params: Promise<{ slug: string }>;
@@ -37,6 +38,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
           <CardBody className="space-y-4 p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-brand-700">Actions</p>
             <p className="text-sm leading-6 text-slate-600">Images, reviews, and add-to-cart actions can be wired here once the API client is connected.</p>
+            <AddToCartButton userId="user-customer" productId={product.id} />
           </CardBody>
         </Card>
       </div>

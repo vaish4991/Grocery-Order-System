@@ -10,6 +10,7 @@ export const store: {
   addresses: Address[];
   categories: typeof categories;
   products: Product[];
+  otps: Array<{ email: string; code: string; expiresAt: string }>;
   carts: Cart[];
   cartItems: CartItem[];
   orders: Order[];
@@ -41,6 +42,7 @@ export const store: {
   ],
   addresses: [],
   categories,
+    otps: [],
   products: [...products],
   carts: [{ id: "cart-demo", userId: "user-customer" }],
   cartItems: [],

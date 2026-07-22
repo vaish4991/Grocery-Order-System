@@ -2,6 +2,7 @@ import Link from "next/link";
 import { products } from "@shared/data/catalog";
 import { Card, CardBody } from "@shared/ui";
 import { ContentPage } from "@customer/components/content-page";
+import { AddToCartButton } from "@customer/components/add-to-cart-button";
 
 export default function ProductsPage() {
   return (
@@ -22,9 +23,12 @@ export default function ProductsPage() {
                 <p className="text-lg font-semibold text-slate-950">₹{product.discountPrice ?? product.price}</p>
               </div>
               <p className="text-sm leading-6 text-slate-600">{product.description}</p>
-              <Link href={`/products/${product.slug}`} className="text-sm font-medium text-brand-700 hover:text-brand-800">
-                Open product
-              </Link>
+              <div className="flex flex-wrap items-center gap-4">
+                <Link href={`/products/${product.slug}`} className="text-sm font-medium text-brand-700 hover:text-brand-800">
+                  Open product
+                </Link>
+                <AddToCartButton userId="user-customer" productId={product.id} />
+              </div>
             </CardBody>
           </Card>
         ))}

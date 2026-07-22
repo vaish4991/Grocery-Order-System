@@ -13,9 +13,14 @@ interface LoginDto {
   password: string;
 }
 
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 @Injectable()
 export class AuthService {
   register(input: RegisterDto) {
+    const code = generateOtp();
     const user = {
       id: id("user"),
       name: input.name,
@@ -29,16 +34,22 @@ export class AuthService {
     };
 
     store.users.push(user);
+    store.otps.push({
+      email: input.email,
+      code,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 10).toISOString()
+    });
 
     return {
       message: "Registration started",
       user,
+      otp: code,
       next: "Verify OTP"
     };
   }
 
   login(input: LoginDto) {
-    const user = store.users.find((entry) => entry.email === input.email);
+    const user = store.users.find((entry) => entry.email === input.email && entry.password === input.password);
 
     return {
       accessToken: `access-${user?.id ?? "guest"}`,
@@ -48,21 +59,56 @@ export class AuthService {
     };
   }
 
-  verifyOtp(email: string) {
+  verifyOtp(email: string, code: string) {
+    const otp = store.otps.find((entry) => entry.email === email && entry.code === code);
     const user = store.users.find((entry) => entry.email === email);
+    if (!otp || !user || new Date(otp.expiresAt).getTime() < Date.now()) {
+      return { verified: false, email };
+    }
     if (user) {
       user.status = "active";
       user.updatedAt = new Date().toISOString();
     }
+    store.otps = store.otps.filter((entry) => !(entry.email === email && entry.code === code));
     return { verified: Boolean(user), email };
   }
 
-  forgotPassword(email: string) {
-    return { sent: Boolean(store.users.find((entry) => entry.email === email)), email };
+  resendOtp(email: string) {
+    const code = generateOtp();
+    store.otps = store.otps.filter((entry) => entry.email !== email);
+    store.otps.push({
+      email,
+      code,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 10).toISOString()
+    });
+    return { email, code, sent: true };
   }
 
-  resetPassword(email: string) {
-    return { reset: Boolean(store.users.find((entry) => entry.email === email)), email };
+  forgotPassword(email: string) {
+    const user = store.users.find((entry) => entry.email === email);
+    if (!user) {
+      return { sent: false, email };
+    }
+    const code = generateOtp();
+    store.otps = store.otps.filter((entry) => entry.email !== email);
+    store.otps.push({
+      email,
+      code,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 10).toISOString()
+    });
+    return { sent: true, email, code };
+  }
+
+  resetPassword(email: string, code: string, newPassword: string) {
+    const otp = store.otps.find((entry) => entry.email === email && entry.code === code);
+    const user = store.users.find((entry) => entry.email === email);
+    if (!otp || !user || new Date(otp.expiresAt).getTime() < Date.now()) {
+      return { reset: false, email };
+    }
+    user.password = newPassword;
+    user.updatedAt = new Date().toISOString();
+    store.otps = store.otps.filter((entry) => !(entry.email === email && entry.code === code));
+    return { reset: true, email };
   }
 
   refreshToken() {
@@ -85,8 +131,13 @@ export class AuthController {
   }
 
   @Post("verify-otp")
-  verifyOtp(@Body() body: { email: string }) {
-    return this.authService.verifyOtp(body.email);
+  verifyOtp(@Body() body: { email: string; code: string }) {
+    return this.authService.verifyOtp(body.email, body.code);
+  }
+
+  @Post("resend-otp")
+  resendOtp(@Body() body: { email: string }) {
+    return this.authService.resendOtp(body.email);
   }
 
   @Post("forgot-password")
@@ -95,8 +146,8 @@ export class AuthController {
   }
 
   @Post("reset-password")
-  resetPassword(@Body() body: { email: string }) {
-    return this.authService.resetPassword(body.email);
+  resetPassword(@Body() body: { email: string; code: string; newPassword: string }) {
+    return this.authService.resetPassword(body.email, body.code, body.newPassword);
   }
 
   @Get("refresh")
